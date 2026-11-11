@@ -3,7 +3,7 @@
   "short_name": "行李收纳",
   "description": "模块化行李收纳清单，离线可用的打包助手",
   "lang": "zh-CN",
-  "start_url": "./模块化行李收纳.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
