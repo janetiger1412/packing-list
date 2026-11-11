@@ -1,4 +1,4 @@
-const CACHE = "luggage-pwa-v2";
+const CACHE = "luggage-pwa-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -35,7 +35,7 @@ self.addEventListener("fetch", e => {
         return res;
       }).catch(() => {
         // 离线且未缓存时，导航请求回退到主页面
-        if (e.request.mode === "navigate") return caches.match("./模块化行李收纳.html");
+        if (e.request.mode === "navigate") return caches.match("./index.html");
       });
     })
   );
