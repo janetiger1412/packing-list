@@ -1,4 +1,4 @@
-const CACHE = "luggage-pwa-v3";
+const CACHE = "luggage-pwa-v4";
 const ASSETS = [
   "./",
   "./index.html",

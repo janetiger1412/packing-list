@@ -6,163 +6,280 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="行李收纳">
-<meta name="theme-color" content="#f5f5f7">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>模块化行李收纳</title>
 <style>
   :root {
-    --bg: #f5f5f7;
+    --bg: #f2f2f7;
     --card: #ffffff;
-    --text: #1d1d1f;
+    --text: #1c1c1e;
     --text-2: #6e6e73;
     --accent: #0071e3;
-    --accent-soft: #e8f0fe;
+    --green: #34c759;
     --danger: #d70015;
-    --border: #e3e3e6;
-    --radius: 14px;
+    --hairline: rgba(60,60,67,.14);
+    --tap: rgba(0,0,0,.05);
+    --sheet-grip: rgba(60,60,67,.3);
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f2f2f7;
+      --text-2: #98989f;
+      --accent: #0a84ff;
+      --green: #30d158;
+      --danger: #ff453a;
+      --hairline: rgba(84,84,88,.55);
+      --tap: rgba(255,255,255,.08);
+      --sheet-grip: rgba(235,235,245,.3);
+    }
+  }
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+  }
+  html { background: var(--bg); }
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
     background: var(--bg);
     color: var(--text);
-    padding-bottom: calc(40px + env(safe-area-inset-bottom));
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
   }
-  .wrap { max-width: 720px; margin: 0 auto; padding: 0 14px; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 16px; }
 
+  /* ===== 导航栏（大标题 + 进度条） ===== */
   header {
     position: sticky; top: 0; z-index: 10;
-    background: rgba(245,245,247,.85);
-    backdrop-filter: saturate(180%) blur(12px);
-    -webkit-backdrop-filter: saturate(180%) blur(12px);
-    border-bottom: 1px solid var(--border);
-    padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+    background: rgba(242,242,247,.8);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    padding: calc(8px + env(safe-area-inset-top)) 16px 0;
   }
-  header .wrap { padding: 0; }
+  @media (prefers-color-scheme: dark) {
+    header { background: rgba(0,0,0,.75); }
+  }
   .title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  h1 { font-size: 20px; margin: 0; }
-  .progress-line { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  h1 { font-size: 28px; font-weight: 700; margin: 4px 0 8px; letter-spacing: .2px; }
+  .nav-btn {
+    border: none; background: none; color: var(--accent);
+    font-size: 17px; padding: 8px 4px; cursor: pointer; font-family: inherit;
+    align-self: flex-start; margin-top: 6px;
+  }
+  .nav-btn:active { opacity: .4; }
+  .progress-line { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; }
   .progress-bar {
-    flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+    flex: 1; height: 5px; background: var(--hairline); border-radius: 3px; overflow: hidden;
   }
   .progress-bar > div {
-    height: 100%; background: var(--accent); border-radius: 4px;
+    height: 100%; background: var(--accent); border-radius: 3px;
     transition: width .25s ease;
   }
-  .progress-text { font-size: 13px; color: var(--text-2); white-space: nowrap; }
-  .toolbar { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .btn {
-    border: 1px solid var(--border); background: var(--card); color: var(--text);
-    border-radius: 999px; padding: 7px 14px; font-size: 14px; cursor: pointer;
-  }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn.danger { color: var(--danger); }
-  .btn:active { opacity: .7; }
+  .progress-text { font-size: 13px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
-  .module {
-    background: var(--card); border-radius: var(--radius); margin-top: 14px;
-    overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.05);
-  }
+  /* ===== 大模块区块 ===== */
+  .module { margin-top: 22px; }
   .module-head {
-    display: flex; align-items: center; gap: 10px; padding: 14px;
-    cursor: pointer; user-select: none;
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 4px; cursor: pointer; user-select: none;
+    min-height: 44px;
   }
-  .module-head .arrow { color: var(--text-2); transition: transform .2s; font-size: 12px; }
-  .module.collapsed .module-head .arrow { transform: rotate(-90deg); }
-  .module-title { flex: 1; min-width: 0; }
-  .module-name { font-size: 16px; font-weight: 600; }
+  .module-head:active { opacity: .55; }
+  .chev {
+    width: 8px; height: 8px; flex-shrink: 0;
+    border-right: 2.5px solid var(--text-2); border-bottom: 2.5px solid var(--text-2);
+    transform: rotate(45deg); transition: transform .22s ease;
+    margin: 0 4px;
+  }
+  .module.collapsed .chev { transform: rotate(-45deg); }
+  .module-title { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .module-name { font-size: 19px; font-weight: 700; }
   .module-loc {
-    display: inline-block; font-size: 12px; color: var(--accent);
-    background: var(--accent-soft); border-radius: 6px; padding: 2px 8px; margin-top: 4px;
+    font-size: 12px; color: var(--accent); font-weight: 500;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius: 6px; padding: 2px 7px;
   }
-  .module-count { font-size: 13px; color: var(--text-2); white-space: nowrap; }
-  .module.done .module-count { color: #34c759; }
+  .module-count { font-size: 14px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .module.done .module-count { color: var(--green); font-weight: 600; }
 
-  .group { border-top: 1px solid var(--border); }
+  /* 折叠动画 */
+  .module-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .25s ease; }
+  .module.collapsed .module-body { grid-template-rows: 0fr; }
+  .module-body > .inner { overflow: hidden; min-height: 0; }
+
+  /* ===== 小模块卡片 ===== */
+  .group { margin-top: 12px; }
   .group-head {
-    display: flex; align-items: center; gap: 8px; padding: 10px 14px;
-    font-size: 15px; font-weight: 600; background: #fafafa;
+    display: flex; align-items: center; gap: 8px; padding: 0 4px 6px;
   }
-  .group-head .g-count { margin-left: auto; font-size: 12px; color: var(--text-2); font-weight: 400; }
+  .g-name { font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: .3px; }
+  .g-count { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .group.done .g-count { color: var(--green); font-weight: 600; }
+  .card {
+    background: var(--card); border-radius: 14px; overflow: hidden;
+  }
+  @media (prefers-color-scheme: light) {
+    .card { box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  }
 
+  /* ===== 物品行 ===== */
   .item {
-    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-    border-top: 1px solid #f0f0f2; cursor: pointer; min-height: 48px;
+    display: flex; align-items: center; gap: 13px;
+    padding: 13px 16px; min-height: 52px; cursor: pointer;
   }
-  .item input[type="checkbox"] {
-    width: 22px; height: 22px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer;
+  .item:not(:first-child) { border-top: 1px solid var(--hairline); }
+  .item:active { background: var(--tap); }
+  .check {
+    width: 25px; height: 25px; border-radius: 50%; flex-shrink: 0;
+    border: 2px solid #c7c7cc; position: relative;
+    transition: background .15s ease, border-color .15s ease;
   }
-  .item .item-name { flex: 1; font-size: 15px; }
+  @media (prefers-color-scheme: dark) { .check { border-color: #48484a; } }
+  .check::after {
+    content: ""; position: absolute; left: 7px; top: 3.5px;
+    width: 5px; height: 10px;
+    border-right: 2.5px solid #fff; border-bottom: 2.5px solid #fff;
+    transform: rotate(45deg) scale(0); transition: transform .15s ease;
+  }
+  .item.checked .check { background: var(--accent); border-color: var(--accent); }
+  .item.checked .check::after { transform: rotate(45deg) scale(1); }
+  .item .item-name { flex: 1; font-size: 17px; line-height: 1.35; }
   .item.checked .item-name { color: var(--text-2); text-decoration: line-through; }
 
-  /* 编辑模式 */
-  .edit-tools { display: none; gap: 6px; align-items: center; }
+  /* ===== 编辑模式 ===== */
+  .edit-tools { display: none; gap: 2px; align-items: center; flex-shrink: 0; }
   body.editing .edit-tools { display: inline-flex; }
-  body.editing .item, body.editing .module-head, body.editing .group-head { cursor: default; }
+  body.editing .item, body.editing .module-head { cursor: default; }
   .icon-btn {
-    border: none; background: none; font-size: 15px; cursor: pointer; padding: 4px 6px;
-    color: var(--text-2); border-radius: 6px;
+    border: none; background: none; font-size: 16px; cursor: pointer;
+    width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-2); border-radius: 8px; font-family: inherit;
   }
   .icon-btn.del { color: var(--danger); }
-  .icon-btn:active { background: var(--border); }
-  .add-row { display: none; padding: 10px 14px; border-top: 1px dashed var(--border); }
+  .icon-btn:active { background: var(--tap); }
+  .add-row { display: none; }
   body.editing .add-row { display: block; }
-  .add-btn {
-    width: 100%; border: 1px dashed var(--accent); background: none; color: var(--accent);
-    border-radius: 10px; padding: 9px; font-size: 14px; cursor: pointer;
+  .add-row .add-btn {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    width: 100%; border: none; background: none; color: var(--accent);
+    font-size: 16px; padding: 14px; cursor: pointer; font-family: inherit;
+    min-height: 50px;
   }
-  .name-input {
-    flex: 1; font-size: 15px; border: 1px solid var(--accent); border-radius: 8px;
-    padding: 6px 8px; min-width: 0; font-family: inherit;
-  }
-  .footer-note { text-align: center; color: var(--text-2); font-size: 12px; margin-top: 24px; }
+  .add-row .add-btn:active { background: var(--tap); }
+  .add-row.in-card { border-top: 1px solid var(--hairline); }
+  .add-row.standalone .add-btn { color: var(--text-2); font-size: 15px; }
+
+  .footer-note { text-align: center; color: var(--text-2); font-size: 12px; margin-top: 28px; }
   .hidden { display: none !important; }
 
-  /* 页面内弹窗（替代原生 confirm/prompt，兼容手机浏览器） */
-  .modal-overlay {
+  /* ===== 底部操作栏 ===== */
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex;
+    background: rgba(242,242,247,.85);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 1px solid var(--hairline);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  @media (prefers-color-scheme: dark) {
+    .tabbar { background: rgba(28,28,30,.85); }
+  }
+  .tabbar button {
+    flex: 1; border: none; background: none; cursor: pointer; font-family: inherit;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 7px 0 6px; font-size: 11px; color: var(--accent);
+  }
+  .tabbar button .tab-icon { font-size: 20px; line-height: 1; }
+  .tabbar button.danger { color: var(--danger); }
+  .tabbar button:active { opacity: .4; }
+
+  /* ===== Action Sheet（底部动作菜单） ===== */
+  .sheet-overlay {
     position: fixed; inset: 0; z-index: 100;
-    background: rgba(0,0,0,.35);
+    background: rgba(0,0,0,.4);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    animation: fadeIn .18s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .sheet {
+    margin: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    border-radius: 14px; overflow: hidden;
+    background: var(--card);
+    animation: sheetUp .28s cubic-bezier(.32,.72,.35,1);
+  }
+  @keyframes sheetUp { from { transform: translateY(110%); } to { transform: translateY(0); } }
+  .sheet-title {
+    padding: 14px 16px; font-size: 13px; color: var(--text-2);
+    text-align: center; line-height: 1.45;
+  }
+  .sheet-btn {
+    display: block; width: 100%; border: none; background: none;
+    padding: 16px; font-size: 18px; color: var(--accent);
+    border-top: 1px solid var(--hairline); cursor: pointer; font-family: inherit;
+  }
+  .sheet-btn.destructive { color: var(--danger); }
+  .sheet-btn.cancel { font-weight: 600; border-top: none; margin-top: 8px; border-radius: 14px; background: var(--card); }
+  .sheet-btn:active { background: var(--tap); }
+
+  /* ===== Alert（居中弹窗，用于输入） ===== */
+  .alert-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,.4);
     display: flex; align-items: center; justify-content: center;
-    padding: 24px;
+    padding: 32px; animation: fadeIn .18s ease;
   }
-  .modal-card {
-    background: var(--card); border-radius: var(--radius);
-    width: 100%; max-width: 340px; padding: 18px;
-    box-shadow: 0 10px 40px rgba(0,0,0,.2);
+  .alert-card {
+    background: var(--card); border-radius: 14px;
+    width: 100%; max-width: 300px; overflow: hidden;
+    animation: alertIn .22s cubic-bezier(.32,.72,.35,1);
+    transform-origin: center;
   }
-  .modal-msg { font-size: 15px; line-height: 1.5; margin: 0 0 14px; }
-  .modal-input {
-    width: 100%; font-size: 15px; border: 1px solid var(--accent); border-radius: 8px;
-    padding: 8px 10px; margin-bottom: 14px; font-family: inherit;
+  @keyframes alertIn { from { transform: scale(1.12); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .alert-body { padding: 18px 16px 14px; text-align: center; }
+  .alert-title { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
+  .alert-msg { font-size: 13px; color: var(--text-2); margin: 0 0 10px; line-height: 1.45; }
+  .alert-input {
+    width: 100%; font-size: 15px; border: 1px solid var(--hairline); border-radius: 8px;
+    padding: 8px 10px; font-family: inherit; background: var(--bg); color: var(--text);
   }
-  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
-  .modal-btns .btn { padding: 8px 18px; }
-  .modal-btns .btn.ok-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .alert-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .alert-btns { display: flex; border-top: 1px solid var(--hairline); }
+  .alert-btns button {
+    flex: 1; border: none; background: none; padding: 12px;
+    font-size: 17px; color: var(--accent); cursor: pointer; font-family: inherit;
+  }
+  .alert-btns button + button { border-left: 1px solid var(--hairline); font-weight: 600; }
+  .alert-btns button.destructive { color: var(--danger); }
+  .alert-btns button:active { background: var(--tap); }
 </style>
 </head>
 <body>
 <header>
-  <div class="wrap">
-    <div class="title-row">
-      <h1>🧳 模块化行李收纳</h1>
-    </div>
-    <div class="progress-line">
-      <div class="progress-bar"><div id="overallBar" style="width:0%"></div></div>
-      <div class="progress-text" id="overallText">0 / 0</div>
-    </div>
-    <div class="toolbar">
-      <button class="btn primary" id="editToggle">编辑清单</button>
-      <button class="btn" id="resetChecks">重置勾选</button>
-      <button class="btn danger hidden" id="resetData">恢复默认清单</button>
-    </div>
+  <div class="title-row">
+    <h1>🧳 行李收纳</h1>
+    <button class="nav-btn" id="editToggle">编辑</button>
+  </div>
+  <div class="progress-line">
+    <div class="progress-bar"><div id="overallBar" style="width:0%"></div></div>
+    <div class="progress-text" id="overallText">0 / 0</div>
   </div>
 </header>
 
 <div class="wrap" id="app"></div>
 
-<div class="wrap footer-note">数据保存在本机浏览器 · 默认清单来自《模块化行李收纳.xlsx》</div>
+<div class="wrap footer-note">数据保存在本机 · 默认清单来自《模块化行李收纳.xlsx》</div>
+
+<nav class="tabbar">
+  <button id="resetChecks"><span class="tab-icon">⟳</span>重置勾选</button>
+  <button id="resetData" class="danger hidden"><span class="tab-icon">↺</span>恢复默认</button>
+</nav>
 
 <script>
 // ================= 默认数据（来自 Excel 工作表 1） =================
@@ -264,7 +381,7 @@ function safeSet(key, val) {
   } catch (e) {
     if (!storageWarned) {
       storageWarned = true;
-      showDialog({ message: "当前浏览器无法保存数据（可能是无痕/隐私模式），本次修改在关闭页面后会丢失。建议用普通模式打开。" });
+      showSheet({ title: "当前浏览器无法保存数据（可能是无痕/隐私模式），本次修改在关闭页面后会丢失。建议用普通模式打开。", actions: [{ label: "知道了", style: "cancel", value: true }] });
     }
   }
 }
@@ -280,9 +397,7 @@ function uid(prefix) {
   return prefix + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
-// ================= 查找辅助 =================
-function findModule(mid) { return state.data.modules.find(m => m.id === mid); }
-function findGroup(mid, gid) { const m = findModule(mid); return m && m.groups.find(g => g.id === gid); }
+function haptic() { if (navigator.vibrate) navigator.vibrate(8); }
 
 // ================= 渲染 =================
 const app = document.getElementById("app");
@@ -301,46 +416,44 @@ function makeIconBtn(label, cls, onClick) {
   return b;
 }
 
-// 行内改名：把文本节点换成输入框
-function inlineRename(nameSpan, current, onDone) {
-  const input = el("input", "name-input");
-  input.value = current;
-  nameSpan.replaceWith(input);
-  input.focus();
-  input.select();
-  let finished = false;
-  const finish = (commit) => {
-    if (finished) return;
-    finished = true;
-    onDone(commit ? input.value.trim() : null);
-  };
-  input.addEventListener("keydown", ev => {
-    if (ev.key === "Enter") finish(true);
-    if (ev.key === "Escape") finish(false);
+// ================= Action Sheet / Alert =================
+// 底部动作菜单：opts { title, actions: [{label, style: 'default'|'destructive'|'cancel', value}] }
+function showSheet(opts) {
+  return new Promise(resolve => {
+    const overlay = el("div", "sheet-overlay");
+    const sheet = el("div", "sheet");
+    if (opts.title) sheet.appendChild(el("div", "sheet-title", opts.title));
+    opts.actions.forEach((a, i) => {
+      const b = el("button", "sheet-btn" + (a.style === "destructive" ? " destructive" : "") + (a.style === "cancel" ? " cancel" : ""), a.label);
+      b.type = "button";
+      b.addEventListener("click", () => { overlay.remove(); resolve(a.value); });
+      sheet.appendChild(b);
+    });
+    overlay.appendChild(sheet);
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", ev => {
+      if (ev.target === overlay) { overlay.remove(); resolve(undefined); }
+    });
   });
-  input.addEventListener("blur", () => finish(true));
-  input.addEventListener("click", ev => ev.stopPropagation());
 }
 
-// ================= 页面内弹窗（替代原生 confirm/prompt） =================
-// opts: { message, input (可选，有则为输入弹窗), danger (可选，确定按钮红色) }
-// 确认弹窗 resolve true/false；输入弹窗 resolve 字符串或 null（取消）
-function showDialog(opts) {
+// 居中输入弹窗：resolve 输入字符串或 null（取消）
+function showAlertInput(title, message, value) {
   return new Promise(resolve => {
-    const hasInput = opts.input !== undefined;
-    const overlay = el("div", "modal-overlay");
-    const card = el("div", "modal-card");
-    card.appendChild(el("p", "modal-msg", opts.message));
-    let input = null;
-    if (hasInput) {
-      input = el("input", "modal-input");
-      input.value = opts.input;
-      card.appendChild(input);
-    }
-    const btns = el("div", "modal-btns");
-    const cancelBtn = el("button", "btn", "取消");
+    const overlay = el("div", "alert-overlay");
+    const card = el("div", "alert-card");
+    const body = el("div", "alert-body");
+    body.appendChild(el("p", "alert-title", title));
+    if (message) body.appendChild(el("p", "alert-msg", message));
+    const input = el("input", "alert-input");
+    input.value = value || "";
+    input.enterKeyHint = "done";
+    body.appendChild(input);
+    card.appendChild(body);
+    const btns = el("div", "alert-btns");
+    const cancelBtn = el("button", "", "取消");
     cancelBtn.type = "button";
-    const okBtn = el("button", "btn primary" + (opts.danger ? " ok-danger" : ""), "确定");
+    const okBtn = el("button", "", "确定");
     okBtn.type = "button";
     btns.appendChild(cancelBtn);
     btns.appendChild(okBtn);
@@ -348,24 +461,28 @@ function showDialog(opts) {
     overlay.appendChild(card);
     document.body.appendChild(overlay);
 
-    const close = val => { overlay.remove(); resolve(val); };
-    cancelBtn.addEventListener("click", () => close(hasInput ? null : false));
-    okBtn.addEventListener("click", () => close(hasInput ? input.value : true));
-    overlay.addEventListener("click", ev => {
-      if (ev.target === overlay) close(hasInput ? null : false);
-    });
-    if (input) {
-      input.addEventListener("keydown", ev => {
-        if (ev.key === "Enter") close(input.value);
-      });
-      input.focus();
-      input.select();
-    }
+    const close = v => { overlay.remove(); resolve(v); };
+    cancelBtn.addEventListener("click", () => close(null));
+    okBtn.addEventListener("click", () => close(input.value.trim()));
+    overlay.addEventListener("click", ev => { if (ev.target === overlay) close(null); });
+    input.addEventListener("keydown", ev => { if (ev.key === "Enter") close(input.value.trim()); });
+    input.focus();
+    input.select();
   });
 }
-function confirmDlg(message, danger) { return showDialog({ message, danger }); }
-function promptDlg(message, value) { return showDialog({ message, input: value || "" }); }
 
+function confirmDlg(message, danger) {
+  return showSheet({
+    title: message,
+    actions: [
+      { label: "确定", style: danger ? "destructive" : "default", value: true },
+      { label: "取消", style: "cancel", value: false }
+    ]
+  });
+}
+function promptDlg(title, value, message) { return showAlertInput(title, message, value); }
+
+// ================= 渲染 =================
 function render() {
   app.innerHTML = "";
   let totalItems = 0, totalChecked = 0;
@@ -383,24 +500,21 @@ function render() {
 
     // ---- 大模块头 ----
     const head = el("div", "module-head");
-    head.appendChild(el("span", "arrow", "▼"));
+    head.appendChild(el("span", "chev"));
     const title = el("div", "module-title");
-    title.appendChild(el("div", "module-name", mod.name));
+    title.appendChild(el("span", "module-name", mod.name));
     if (mod.location) title.appendChild(el("span", "module-loc", "📍 " + mod.location));
     head.appendChild(title);
     head.appendChild(el("span", "module-count", mChecked + " / " + mTotal));
 
     const mTools = el("span", "edit-tools");
-    mTools.appendChild(makeIconBtn("✏️", "", () => {
-      const nameEl = head.querySelector(".module-name");
-      inlineRename(nameEl, mod.name, v => {
-        if (v) { mod.name = v; saveData(); }
-        render();
-      });
+    mTools.appendChild(makeIconBtn("✏️", "", async () => {
+      const v = await promptDlg("重命名大模块", null, mod.name);
+      if (v) { mod.name = v; saveData(); render(); }
     }));
     mTools.appendChild(makeIconBtn("📍", "", async () => {
-      const v = await promptDlg("收纳位置（留空则移除）", mod.location || "");
-      if (v !== null) { mod.location = v.trim(); saveData(); render(); }
+      const v = await promptDlg("收纳位置", "留空则移除", mod.location || "");
+      if (v !== null) { mod.location = v; saveData(); render(); }
     }));
     mTools.appendChild(makeIconBtn("🗑", "del", async () => {
       if (await confirmDlg("删除「" + mod.name + "」及其下所有物品？", true)) {
@@ -418,20 +532,19 @@ function render() {
 
     // ---- 小模块 ----
     const body = el("div", "module-body");
+    const inner = el("div", "inner");
     mod.groups.forEach(grp => {
-      const gEl = el("div", "group");
+      const gChecked = grp.items.filter(it => state.checked[it.id]).length;
+      const gEl = el("div", "group" + (grp.items.length > 0 && gChecked === grp.items.length ? " done" : ""));
+
       const gHead = el("div", "group-head");
       gHead.appendChild(el("span", "g-name", grp.name));
-      const gChecked = grp.items.filter(it => state.checked[it.id]).length;
       gHead.appendChild(el("span", "g-count", gChecked + "/" + grp.items.length));
 
       const gTools = el("span", "edit-tools");
-      gTools.appendChild(makeIconBtn("✏️", "", () => {
-        const nameEl = gHead.querySelector(".g-name");
-        inlineRename(nameEl, grp.name, v => {
-          if (v) { grp.name = v; saveData(); }
-          render();
-        });
+      gTools.appendChild(makeIconBtn("✏️", "", async () => {
+        const v = await promptDlg("重命名小模块", null, grp.name);
+        if (v) { grp.name = v; saveData(); render(); }
       }));
       gTools.appendChild(makeIconBtn("🗑", "del", async () => {
         if (await confirmDlg("删除「" + grp.name + "」及其下所有物品？", true)) {
@@ -442,22 +555,18 @@ function render() {
       gHead.appendChild(gTools);
       gEl.appendChild(gHead);
 
+      const card = el("div", "card");
+
       // ---- 物品 ----
       grp.items.forEach(item => {
         const row = el("div", "item" + (state.checked[item.id] ? " checked" : ""));
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.checked = !!state.checked[item.id];
-        row.appendChild(cb);
+        row.appendChild(el("span", "check"));
         row.appendChild(el("span", "item-name", item.name));
 
         const iTools = el("span", "edit-tools");
-        iTools.appendChild(makeIconBtn("✏️", "", () => {
-          const nameEl = row.querySelector(".item-name");
-          inlineRename(nameEl, item.name, v => {
-            if (v) { item.name = v; saveData(); }
-            render();
-          });
+        iTools.appendChild(makeIconBtn("✏️", "", async () => {
+          const v = await promptDlg("重命名物品", null, item.name);
+          if (v) { item.name = v; saveData(); render(); }
         }));
         iTools.appendChild(makeIconBtn("🗑", "del", () => {
           grp.items = grp.items.filter(i => i.id !== item.id);
@@ -466,21 +575,15 @@ function render() {
         }));
         row.appendChild(iTools);
 
-        row.addEventListener("click", ev => {
+        row.addEventListener("click", () => {
           if (state.editing) return;
-          if (ev.target === cb) return; // checkbox 自身会触发 change
-          cb.checked = !cb.checked;
-          onCheck(item.id, cb.checked, row);
+          onCheck(item.id, !state.checked[item.id]);
         });
-        cb.addEventListener("change", () => {
-          if (state.editing) { cb.checked = !cb.checked; return; }
-          onCheck(item.id, cb.checked, row);
-        });
-        gEl.appendChild(row);
+        card.appendChild(row);
       });
 
       // 添加物品
-      const addItem = el("div", "add-row");
+      const addItem = el("div", "add-row in-card");
       const addItemBtn = el("button", "add-btn", "＋ 添加物品");
       addItemBtn.type = "button";
       addItemBtn.addEventListener("click", () => {
@@ -488,13 +591,14 @@ function render() {
         saveData(); render();
       });
       addItem.appendChild(addItemBtn);
-      gEl.appendChild(addItem);
+      card.appendChild(addItem);
 
-      body.appendChild(gEl);
+      gEl.appendChild(card);
+      inner.appendChild(gEl);
     });
 
     // 添加小模块
-    const addGroup = el("div", "add-row");
+    const addGroup = el("div", "add-row standalone");
     const addGroupBtn = el("button", "add-btn", "＋ 添加小模块");
     addGroupBtn.type = "button";
     addGroupBtn.addEventListener("click", () => {
@@ -502,15 +606,15 @@ function render() {
       saveData(); render();
     });
     addGroup.appendChild(addGroupBtn);
-    body.appendChild(addGroup);
+    inner.appendChild(addGroup);
 
+    body.appendChild(inner);
     modEl.appendChild(body);
     app.appendChild(modEl);
   });
 
   // 添加大模块
-  const addModWrap = el("div", "add-row");
-  addModWrap.style.border = "none";
+  const addModWrap = el("div", "add-row standalone");
   const addModBtn = el("button", "add-btn", "＋ 添加大模块");
   addModBtn.type = "button";
   addModBtn.addEventListener("click", () => {
@@ -526,14 +630,14 @@ function render() {
   document.getElementById("overallText").textContent = totalChecked + " / " + totalItems + (pct === 100 && totalItems > 0 ? " ✅" : "");
 }
 
-function onCheck(id, val, row) {
+function onCheck(id, val) {
   if (val) state.checked[id] = true; else delete state.checked[id];
   saveChecked();
-  row.classList.toggle("checked", val);
+  haptic();
   render(); // 简单起见整体重绘，进度即时更新
 }
 
-// ================= 工具栏 =================
+// ================= 编辑 / 底部操作栏 =================
 const editToggle = document.getElementById("editToggle");
 const resetChecks = document.getElementById("resetChecks");
 const resetData = document.getElementById("resetData");
@@ -541,7 +645,7 @@ const resetData = document.getElementById("resetData");
 editToggle.addEventListener("click", () => {
   state.editing = !state.editing;
   document.body.classList.toggle("editing", state.editing);
-  editToggle.textContent = state.editing ? "完成编辑" : "编辑清单";
+  editToggle.textContent = state.editing ? "完成" : "编辑";
   resetData.classList.toggle("hidden", !state.editing);
 });
 
