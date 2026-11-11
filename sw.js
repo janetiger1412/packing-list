@@ -1,7 +1,7 @@
-const CACHE = "luggage-pwa-v1";
+const CACHE = "luggage-pwa-v2";
 const ASSETS = [
   "./",
-  "./模块化行李收纳.html",
+  "./index.html",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
