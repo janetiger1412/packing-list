@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="行李收纳">
+<meta name="theme-color" content="#f5f5f7">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>模块化行李收纳</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --text-2: #6e6e73;
+    --accent: #0071e3;
+    --accent-soft: #e8f0fe;
+    --danger: #d70015;
+    --border: #e3e3e6;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 14px; }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(245,245,247,.85);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+  }
+  header .wrap { padding: 0; }
+  .title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  h1 { font-size: 20px; margin: 0; }
+  .progress-line { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .progress-bar {
+    flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+  }
+  .progress-bar > div {
+    height: 100%; background: var(--accent); border-radius: 4px;
+    transition: width .25s ease;
+  }
+  .progress-text { font-size: 13px; color: var(--text-2); white-space: nowrap; }
+  .toolbar { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .btn {
+    border: 1px solid var(--border); background: var(--card); color: var(--text);
+    border-radius: 999px; padding: 7px 14px; font-size: 14px; cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.danger { color: var(--danger); }
+  .btn:active { opacity: .7; }
+
+  .module {
+    background: var(--card); border-radius: var(--radius); margin-top: 14px;
+    overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  }
+  .module-head {
+    display: flex; align-items: center; gap: 10px; padding: 14px;
+    cursor: pointer; user-select: none;
+  }
+  .module-head .arrow { color: var(--text-2); transition: transform .2s; font-size: 12px; }
+  .module.collapsed .module-head .arrow { transform: rotate(-90deg); }
+  .module-title { flex: 1; min-width: 0; }
+  .module-name { font-size: 16px; font-weight: 600; }
+  .module-loc {
+    display: inline-block; font-size: 12px; color: var(--accent);
+    background: var(--accent-soft); border-radius: 6px; padding: 2px 8px; margin-top: 4px;
+  }
+  .module-count { font-size: 13px; color: var(--text-2); white-space: nowrap; }
+  .module.done .module-count { color: #34c759; }
+
+  .group { border-top: 1px solid var(--border); }
+  .group-head {
+    display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+    font-size: 15px; font-weight: 600; background: #fafafa;
+  }
+  .group-head .g-count { margin-left: auto; font-size: 12px; color: var(--text-2); font-weight: 400; }
+
+  .item {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    border-top: 1px solid #f0f0f2; cursor: pointer; min-height: 48px;
+  }
+  .item input[type="checkbox"] {
+    width: 22px; height: 22px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer;
+  }
+  .item .item-name { flex: 1; font-size: 15px; }
+  .item.checked .item-name { color: var(--text-2); text-decoration: line-through; }
+
+  /* 编辑模式 */
+  .edit-tools { display: none; gap: 6px; align-items: center; }
+  body.editing .edit-tools { display: inline-flex; }
+  body.editing .item, body.editing .module-head, body.editing .group-head { cursor: default; }
+  .icon-btn {
+    border: none; background: none; font-size: 15px; cursor: pointer; padding: 4px 6px;
+    color: var(--text-2); border-radius: 6px;
+  }
+  .icon-btn.del { color: var(--danger); }
+  .icon-btn:active { background: var(--border); }
+  .add-row { display: none; padding: 10px 14px; border-top: 1px dashed var(--border); }
+  body.editing .add-row { display: block; }
+  .add-btn {
+    width: 100%; border: 1px dashed var(--accent); background: none; color: var(--accent);
+    border-radius: 10px; padding: 9px; font-size: 14px; cursor: pointer;
+  }
+  .name-input {
+    flex: 1; font-size: 15px; border: 1px solid var(--accent); border-radius: 8px;
+    padding: 6px 8px; min-width: 0; font-family: inherit;
+  }
+  .footer-note { text-align: center; color: var(--text-2); font-size: 12px; margin-top: 24px; }
+  .hidden { display: none !important; }
+
+  /* 页面内弹窗（替代原生 confirm/prompt，兼容手机浏览器） */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,.35);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .modal-card {
+    background: var(--card); border-radius: var(--radius);
+    width: 100%; max-width: 340px; padding: 18px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.2);
+  }
+  .modal-msg { font-size: 15px; line-height: 1.5; margin: 0 0 14px; }
+  .modal-input {
+    width: 100%; font-size: 15px; border: 1px solid var(--accent); border-radius: 8px;
+    padding: 8px 10px; margin-bottom: 14px; font-family: inherit;
+  }
+  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-btns .btn { padding: 8px 18px; }
+  .modal-btns .btn.ok-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="title-row">
+      <h1>🧳 模块化行李收纳</h1>
+    </div>
+    <div class="progress-line">
+      <div class="progress-bar"><div id="overallBar" style="width:0%"></div></div>
+      <div class="progress-text" id="overallText">0 / 0</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn primary" id="editToggle">编辑清单</button>
+      <button class="btn" id="resetChecks">重置勾选</button>
+      <button class="btn danger hidden" id="resetData">恢复默认清单</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap" id="app"></div>
+
+<div class="wrap footer-note">数据保存在本机浏览器 · 默认清单来自《模块化行李收纳.xlsx》</div>
+
+<script>
+// ================= 默认数据（来自 Excel 工作表 1） =================
+const DEFAULT_DATA = {
+  modules: [
+    {
+      id: "m1", name: "模块1：路上不拿出来的", location: "行李箱",
+      groups: [
+        { id: "g1_1", name: "1.1 衣物包", items: [
+          { id: "i1_1_1", name: "外穿衣物" },
+          { id: "i1_1_2", name: "睡衣" },
+          { id: "i1_1_3", name: "贴身衣物（内衣/内裤/袜子/毛巾）" }
+        ]},
+        { id: "g1_2", name: "1.2 洗漱包", items: [
+          { id: "i1_2_1", name: "牙套" },
+          { id: "i1_2_2", name: "牙刷/牙膏" },
+          { id: "i1_2_3", name: "洗发皂" },
+          { id: "i1_2_4", name: "耳塞" },
+          { id: "i1_2_5", name: "香水" },
+          { id: "i1_2_6", name: "眼罩" },
+          { id: "i1_2_7", name: "安眠药" },
+          { id: "i1_2_8", name: "洗面奶" },
+          { id: "i1_2_9", name: "面霜" },
+          { id: "i1_2_10", name: "防晒霜" }
+        ]},
+        { id: "g1_3", name: "1.3 化妆包", items: [
+          { id: "i1_3_1", name: "水粉霜" },
+          { id: "i1_3_2", name: "卸妆湿巾" },
+          { id: "i1_3_3", name: "散粉" },
+          { id: "i1_3_4", name: "眉笔" },
+          { id: "i1_3_5", name: "口红" }
+        ]},
+        { id: "g1_4", name: "1.4 充电包", items: [
+          { id: "i1_4_1", name: "两用充电头" },
+          { id: "i1_4_2", name: "手机充电线" }
+        ]}
+      ]
+    },
+    {
+      id: "m2", name: "模块2：路上要用到的", location: "背包",
+      groups: [
+        { id: "g2_1", name: "2.1 护理包", items: [
+          { id: "i2_1_1", name: "湿纸巾" },
+          { id: "i2_1_2", name: "纸巾" },
+          { id: "i2_1_3", name: "防晒口罩" },
+          { id: "i2_1_4", name: "发绳" },
+          { id: "i2_1_5", name: "润唇膏" },
+          { id: "i2_1_6", name: "护手霜" },
+          { id: "i2_1_7", name: "香茅膏" }
+        ]},
+        { id: "g2_2", name: "2.2 电子包", items: [
+          { id: "i2_2_1", name: "充电宝" },
+          { id: "i2_2_2", name: "Kindle" },
+          { id: "i2_2_3", name: "蓝牙耳机" }
+        ]},
+        { id: "g2_3", name: "2.3 肩颈健康", items: [
+          { id: "i2_3_1", name: "颈托" },
+          { id: "i2_3_2", name: "筋膜球" },
+          { id: "i2_3_3", name: "充气瑜伽球" }
+        ]},
+        { id: "g2_4", name: "2.4 钛水壶", items: [ { id: "i2_4_1", name: "钛水壶" } ]}
+      ]
+    },
+    {
+      id: "m3", name: "模块3：安检要拿出来的", location: "行李箱外层",
+      groups: [
+        { id: "g3_1", name: "3.1 电脑", items: [ { id: "i3_1_1", name: "电脑" } ]},
+        { id: "g3_2", name: "3.2 雨伞", items: [ { id: "i3_2_1", name: "雨伞" } ]}
+      ]
+    }
+  ]
+};
+
+// ================= 状态存取 =================
+const LS_DATA = "luggage.data.v2";
+const LS_CHECK = "luggage.checked.v2";
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(LS_DATA);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (d && Array.isArray(d.modules)) return d;
+    }
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+function saveData() { safeSet(LS_DATA, JSON.stringify(state.data)); }
+function loadChecked() {
+  try { return JSON.parse(localStorage.getItem(LS_CHECK)) || {}; } catch (e) { return {}; }
+}
+function saveChecked() { safeSet(LS_CHECK, JSON.stringify(state.checked)); }
+
+// 存储失败（无痕模式等）时提示一次
+let storageWarned = false;
+function safeSet(key, val) {
+  try {
+    localStorage.setItem(key, val);
+  } catch (e) {
+    if (!storageWarned) {
+      storageWarned = true;
+      showDialog({ message: "当前浏览器无法保存数据（可能是无痕/隐私模式），本次修改在关闭页面后会丢失。建议用普通模式打开。" });
+    }
+  }
+}
+
+const state = {
+  data: loadData(),
+  checked: loadChecked(),
+  editing: false,
+  collapsed: {}   // moduleId -> true
+};
+
+function uid(prefix) {
+  return prefix + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// ================= 查找辅助 =================
+function findModule(mid) { return state.data.modules.find(m => m.id === mid); }
+function findGroup(mid, gid) { const m = findModule(mid); return m && m.groups.find(g => g.id === gid); }
+
+// ================= 渲染 =================
+const app = document.getElementById("app");
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function makeIconBtn(label, cls, onClick) {
+  const b = el("button", "icon-btn" + (cls ? " " + cls : ""), label);
+  b.type = "button";
+  b.addEventListener("click", ev => { ev.stopPropagation(); onClick(); });
+  return b;
+}
+
+// 行内改名：把文本节点换成输入框
+function inlineRename(nameSpan, current, onDone) {
+  const input = el("input", "name-input");
+  input.value = current;
+  nameSpan.replaceWith(input);
+  input.focus();
+  input.select();
+  let finished = false;
+  const finish = (commit) => {
+    if (finished) return;
+    finished = true;
+    onDone(commit ? input.value.trim() : null);
+  };
+  input.addEventListener("keydown", ev => {
+    if (ev.key === "Enter") finish(true);
+    if (ev.key === "Escape") finish(false);
+  });
+  input.addEventListener("blur", () => finish(true));
+  input.addEventListener("click", ev => ev.stopPropagation());
+}
+
+// ================= 页面内弹窗（替代原生 confirm/prompt） =================
+// opts: { message, input (可选，有则为输入弹窗), danger (可选，确定按钮红色) }
+// 确认弹窗 resolve true/false；输入弹窗 resolve 字符串或 null（取消）
+function showDialog(opts) {
+  return new Promise(resolve => {
+    const hasInput = opts.input !== undefined;
+    const overlay = el("div", "modal-overlay");
+    const card = el("div", "modal-card");
+    card.appendChild(el("p", "modal-msg", opts.message));
+    let input = null;
+    if (hasInput) {
+      input = el("input", "modal-input");
+      input.value = opts.input;
+      card.appendChild(input);
+    }
+    const btns = el("div", "modal-btns");
+    const cancelBtn = el("button", "btn", "取消");
+    cancelBtn.type = "button";
+    const okBtn = el("button", "btn primary" + (opts.danger ? " ok-danger" : ""), "确定");
+    okBtn.type = "button";
+    btns.appendChild(cancelBtn);
+    btns.appendChild(okBtn);
+    card.appendChild(btns);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const close = val => { overlay.remove(); resolve(val); };
+    cancelBtn.addEventListener("click", () => close(hasInput ? null : false));
+    okBtn.addEventListener("click", () => close(hasInput ? input.value : true));
+    overlay.addEventListener("click", ev => {
+      if (ev.target === overlay) close(hasInput ? null : false);
+    });
+    if (input) {
+      input.addEventListener("keydown", ev => {
+        if (ev.key === "Enter") close(input.value);
+      });
+      input.focus();
+      input.select();
+    }
+  });
+}
+function confirmDlg(message, danger) { return showDialog({ message, danger }); }
+function promptDlg(message, value) { return showDialog({ message, input: value || "" }); }
+
+function render() {
+  app.innerHTML = "";
+  let totalItems = 0, totalChecked = 0;
+
+  state.data.modules.forEach(mod => {
+    let mTotal = 0, mChecked = 0;
+    mod.groups.forEach(g => g.items.forEach(it => {
+      mTotal++;
+      if (state.checked[it.id]) mChecked++;
+    }));
+    totalItems += mTotal; totalChecked += mChecked;
+
+    const modEl = el("div", "module" + (state.collapsed[mod.id] ? " collapsed" : "") + (mTotal > 0 && mChecked === mTotal ? " done" : ""));
+    modEl.dataset.mid = mod.id;
+
+    // ---- 大模块头 ----
+    const head = el("div", "module-head");
+    head.appendChild(el("span", "arrow", "▼"));
+    const title = el("div", "module-title");
+    title.appendChild(el("div", "module-name", mod.name));
+    if (mod.location) title.appendChild(el("span", "module-loc", "📍 " + mod.location));
+    head.appendChild(title);
+    head.appendChild(el("span", "module-count", mChecked + " / " + mTotal));
+
+    const mTools = el("span", "edit-tools");
+    mTools.appendChild(makeIconBtn("✏️", "", () => {
+      const nameEl = head.querySelector(".module-name");
+      inlineRename(nameEl, mod.name, v => {
+        if (v) { mod.name = v; saveData(); }
+        render();
+      });
+    }));
+    mTools.appendChild(makeIconBtn("📍", "", async () => {
+      const v = await promptDlg("收纳位置（留空则移除）", mod.location || "");
+      if (v !== null) { mod.location = v.trim(); saveData(); render(); }
+    }));
+    mTools.appendChild(makeIconBtn("🗑", "del", async () => {
+      if (await confirmDlg("删除「" + mod.name + "」及其下所有物品？", true)) {
+        state.data.modules = state.data.modules.filter(m => m.id !== mod.id);
+        saveData(); render();
+      }
+    }));
+    head.appendChild(mTools);
+    head.addEventListener("click", () => {
+      if (state.editing) return;
+      state.collapsed[mod.id] = !state.collapsed[mod.id];
+      modEl.classList.toggle("collapsed");
+    });
+    modEl.appendChild(head);
+
+    // ---- 小模块 ----
+    const body = el("div", "module-body");
+    mod.groups.forEach(grp => {
+      const gEl = el("div", "group");
+      const gHead = el("div", "group-head");
+      gHead.appendChild(el("span", "g-name", grp.name));
+      const gChecked = grp.items.filter(it => state.checked[it.id]).length;
+      gHead.appendChild(el("span", "g-count", gChecked + "/" + grp.items.length));
+
+      const gTools = el("span", "edit-tools");
+      gTools.appendChild(makeIconBtn("✏️", "", () => {
+        const nameEl = gHead.querySelector(".g-name");
+        inlineRename(nameEl, grp.name, v => {
+          if (v) { grp.name = v; saveData(); }
+          render();
+        });
+      }));
+      gTools.appendChild(makeIconBtn("🗑", "del", async () => {
+        if (await confirmDlg("删除「" + grp.name + "」及其下所有物品？", true)) {
+          mod.groups = mod.groups.filter(g => g.id !== grp.id);
+          saveData(); render();
+        }
+      }));
+      gHead.appendChild(gTools);
+      gEl.appendChild(gHead);
+
+      // ---- 物品 ----
+      grp.items.forEach(item => {
+        const row = el("div", "item" + (state.checked[item.id] ? " checked" : ""));
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = !!state.checked[item.id];
+        row.appendChild(cb);
+        row.appendChild(el("span", "item-name", item.name));
+
+        const iTools = el("span", "edit-tools");
+        iTools.appendChild(makeIconBtn("✏️", "", () => {
+          const nameEl = row.querySelector(".item-name");
+          inlineRename(nameEl, item.name, v => {
+            if (v) { item.name = v; saveData(); }
+            render();
+          });
+        }));
+        iTools.appendChild(makeIconBtn("🗑", "del", () => {
+          grp.items = grp.items.filter(i => i.id !== item.id);
+          delete state.checked[item.id];
+          saveData(); saveChecked(); render();
+        }));
+        row.appendChild(iTools);
+
+        row.addEventListener("click", ev => {
+          if (state.editing) return;
+          if (ev.target === cb) return; // checkbox 自身会触发 change
+          cb.checked = !cb.checked;
+          onCheck(item.id, cb.checked, row);
+        });
+        cb.addEventListener("change", () => {
+          if (state.editing) { cb.checked = !cb.checked; return; }
+          onCheck(item.id, cb.checked, row);
+        });
+        gEl.appendChild(row);
+      });
+
+      // 添加物品
+      const addItem = el("div", "add-row");
+      const addItemBtn = el("button", "add-btn", "＋ 添加物品");
+      addItemBtn.type = "button";
+      addItemBtn.addEventListener("click", () => {
+        grp.items.push({ id: uid("i"), name: "新物品" });
+        saveData(); render();
+      });
+      addItem.appendChild(addItemBtn);
+      gEl.appendChild(addItem);
+
+      body.appendChild(gEl);
+    });
+
+    // 添加小模块
+    const addGroup = el("div", "add-row");
+    const addGroupBtn = el("button", "add-btn", "＋ 添加小模块");
+    addGroupBtn.type = "button";
+    addGroupBtn.addEventListener("click", () => {
+      mod.groups.push({ id: uid("g"), name: "新小模块", items: [] });
+      saveData(); render();
+    });
+    addGroup.appendChild(addGroupBtn);
+    body.appendChild(addGroup);
+
+    modEl.appendChild(body);
+    app.appendChild(modEl);
+  });
+
+  // 添加大模块
+  const addModWrap = el("div", "add-row");
+  addModWrap.style.border = "none";
+  const addModBtn = el("button", "add-btn", "＋ 添加大模块");
+  addModBtn.type = "button";
+  addModBtn.addEventListener("click", () => {
+    state.data.modules.push({ id: uid("m"), name: "新大模块", location: "", groups: [] });
+    saveData(); render();
+  });
+  addModWrap.appendChild(addModBtn);
+  app.appendChild(addModWrap);
+
+  // 总进度
+  const pct = totalItems ? Math.round(totalChecked / totalItems * 100) : 0;
+  document.getElementById("overallBar").style.width = pct + "%";
+  document.getElementById("overallText").textContent = totalChecked + " / " + totalItems + (pct === 100 && totalItems > 0 ? " ✅" : "");
+}
+
+function onCheck(id, val, row) {
+  if (val) state.checked[id] = true; else delete state.checked[id];
+  saveChecked();
+  row.classList.toggle("checked", val);
+  render(); // 简单起见整体重绘，进度即时更新
+}
+
+// ================= 工具栏 =================
+const editToggle = document.getElementById("editToggle");
+const resetChecks = document.getElementById("resetChecks");
+const resetData = document.getElementById("resetData");
+
+editToggle.addEventListener("click", () => {
+  state.editing = !state.editing;
+  document.body.classList.toggle("editing", state.editing);
+  editToggle.textContent = state.editing ? "完成编辑" : "编辑清单";
+  resetData.classList.toggle("hidden", !state.editing);
+});
+
+resetChecks.addEventListener("click", async () => {
+  if (await confirmDlg("清空所有勾选，开始新一轮打包？")) {
+    state.checked = {};
+    saveChecked(); render();
+  }
+});
+
+resetData.addEventListener("click", async () => {
+  if (await confirmDlg("恢复为 Excel 默认清单？你的自定义修改和勾选都会被清除。", true)) {
+    state.data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    state.checked = {};
+    saveData(); saveChecked(); render();
+  }
+});
+
+render();
+
+// 注册 Service Worker（PWA 离线支持）
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
